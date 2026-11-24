@@ -23,17 +23,12 @@ function App() {
 
         <nav>
           <button
-            className={page === "lost" ? "nav-active" : ""}
+            className="brand"
             onClick={() => navigate("lost")}
+            type="button"
           >
-            Lost Item
-          </button>
-
-          <button
-            className={page === "found" ? "nav-active" : ""}
-            onClick={() => navigate("found")}
-          >
-            Found Item
+            <span className="brand-icon">L</span>
+            <span>Lost & Found</span>
           </button>
 
           <button
@@ -73,8 +68,8 @@ function App() {
 
             <p>
               {page === "found"
-                ? "Help return someone's belongings by reporting the item you found."
-                : "Submit a report and help us reunite you with your belongings."}
+                ? "Found something? Submit the details below to help return it to its owner."
+                : "Lost something? Submit a report so we can help you find it."}
             </p>
           </section>
 
