@@ -1,36 +1,34 @@
 
 import { useState } from "react";
-import "./App.css";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "http://localhost:8000";
 
 function Lost() {
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-
   const [form, setForm] = useState({
     item_name: "",
-    description: "",
     category: "",
+    description: "",
     location: "",
     date_of_incident: "",
     contact_name: "",
     contact_phone: "",
-    image: null,
   });
 
-  function handleChange(e) {
-    const { name, value, files } = e.target;
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: files ? files[0] : value,
-    }));
+  function handleChange(e) {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     setLoading(true);
     setMessage("");
     setError("");
@@ -38,12 +36,14 @@ function Lost() {
     const data = new FormData();
 
     Object.entries(form).forEach(([key, value]) => {
-      if (value !== null && value !== "") {
-        data.append(key, value);
-      }
+      data.append(key, value);
     });
 
     data.append("report_type", "LOST");
+
+    if (image) {
+      data.append("image", image);
+    }
 
     try {
       const response = await fetch(`${API_URL}/api/reports/`, {
@@ -55,29 +55,27 @@ function Lost() {
 
       if (!response.ok) {
         throw new Error(
-          result.error ||
-          Object.values(result).flat().join(" ") ||
-          "Unable to submit report."
+          result.error || "Unable to submit your report. Please check the form."
         );
       }
 
-      setMessage("Your lost-item report was submitted successfully!");
+      setMessage("Your lost-item report has been submitted successfully!");
 
       setForm({
         item_name: "",
-        description: "",
         category: "",
+        description: "",
         location: "",
         date_of_incident: "",
         contact_name: "",
         contact_phone: "",
-        image: null,
       });
 
-      e.target.reset();
+      setImage(null);
 
+      e.target.reset();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -85,65 +83,63 @@ function Lost() {
 
   return (
     <section className="form-card">
-      <div className="form-heading">
-        <div>
-          <h2>Report a Lost Item</h2>
-          <p>Tell us about the item you lost.</p>
-        </div>
-        <span className="form-number">01</span>
+      <div className="form-card-heading">
+        <h2>Lost Item Information</h2>
+        <p>Please provide as much detail as possible.</p>
       </div>
 
-      {message && <div className="success-message">{message}</div>}
-      {error && <div className="error-message">{error}</div>}
+      {message && <div className="alert success">{message}</div>}
+      {error && <div className="alert error">{error}</div>}
 
       <form onSubmit={handleSubmit}>
-
-        <div className="field">
-          <label>Item Name *</label>
-          <input
-            name="item_name"
-            value={form.item_name}
-            onChange={handleChange}
-            placeholder="e.g. Black wallet"
-            required
-          />
-        </div>
-
-        <div className="field">
-          <label>Category *</label>
-          <select
-            name="category"
-            value={form.category}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select category</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Bags">Bags</option>
-            <option value="Documents">Documents</option>
-            <option value="Wallet">Wallet</option>
-            <option value="Clothing">Clothing</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Description *</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Describe the item..."
-            rows="4"
-            required
-          />
-        </div>
-
-        <div className="field-row">
-          <div className="field">
-            <label>Lost Location *</label>
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Item Name *</label>
             <input
+              type="text"
+              name="item_name"
+              value={form.item_name}
+              onChange={handleChange}
+              placeholder="e.g. Black wallet"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Category *</label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select a category</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Bags">Bags</option>
+              <option value="Documents">Documents</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Keys">Keys</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div className="form-group full-width">
+            <label>Description *</label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Describe the item, including its color, brand, or other identifying details."
+              rows="4"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Last Seen Location *</label>
+            <input
+              type="text"
               name="location"
               value={form.location}
               onChange={handleChange}
@@ -152,7 +148,7 @@ function Lost() {
             />
           </div>
 
-          <div className="field">
+          <div className="form-group">
             <label>Date Lost *</label>
             <input
               type="date"
@@ -162,50 +158,45 @@ function Lost() {
               required
             />
           </div>
-        </div>
 
-        <div className="form-divider" />
-        <h3>Your Contact Information</h3>
-
-        <div className="field-row">
-          <div className="field">
+          <div className="form-group">
             <label>Your Name *</label>
             <input
+              type="text"
               name="contact_name"
               value={form.contact_name}
               onChange={handleChange}
-              placeholder="Full name"
+              placeholder="Enter your name"
               required
             />
           </div>
 
-          <div className="field">
-            <label>Phone Number *</label>
+          <div className="form-group">
+            <label>Contact Number *</label>
             <input
               type="tel"
               name="contact_phone"
               value={form.contact_phone}
               onChange={handleChange}
-              placeholder="01XXXXXXXXX"
+              placeholder="Enter your phone number"
               required
             />
           </div>
+
+          <div className="form-group full-width">
+            <label>Item Image (Optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0] || null)}
+            />
+            <small>Upload an image if you have one.</small>
+          </div>
         </div>
 
-        <div className="field">
-          <label>Item Image (Optional)</label>
-          <input
-            type="file"
-            name="image"
-            accept="image/*"
-            onChange={handleChange}
-          />
-        </div>
-
-        <button className="submit-button" disabled={loading}>
+        <button className="submit-button" type="submit" disabled={loading}>
           {loading ? "Submitting..." : "Submit Lost Item Report"}
         </button>
-
       </form>
     </section>
   );

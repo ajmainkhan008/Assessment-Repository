@@ -22,6 +22,10 @@ from .serializers import (
 )
 
 
+# --------------------------------------------------
+# AUTOMATIC REPORT EXPIRY
+# --------------------------------------------------
+
 def expire_old_reports():
 
     Report.objects.filter(
@@ -50,6 +54,7 @@ class PublicReportCreateView(APIView):
         report_type = serializer.validated_data.get("report_type")
         driver_id = serializer.validated_data.get("driver_id", "").strip()
 
+        # Verify driver ID for found-item reports
         if report_type == "FOUND":
             valid_ids = [
                 item.strip()
@@ -63,6 +68,7 @@ class PublicReportCreateView(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
 
+        # Driver ID is not required for lost-item reports
         elif report_type == "LOST" and driver_id:
             return Response(
                 {"error": "Driver ID is not required for lost-item reports."},
@@ -81,7 +87,7 @@ class PublicReportCreateView(APIView):
 
 
 # --------------------------------------------------
-# CUSTOM ADMIN LOGIN AND CSRF
+# CSRF TOKEN
 # --------------------------------------------------
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -93,14 +99,25 @@ class CSRFTokenView(APIView):
         return Response({"message": "CSRF cookie set"})
 
 
+# --------------------------------------------------
+# CUSTOM ADMIN LOGIN
+# --------------------------------------------------
+
 @method_decorator(csrf_protect, name="dispatch")
 class AdminLoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
     def post(self, request):
-        username = request.data.get("username", "")
+        username = request.data.get("username", "").strip()
         password = request.data.get("password", "")
+
+        # Only the username alam is permitted
+        if username != "alam":
+            return Response(
+                {"error": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
         user = authenticate(
             request,
@@ -108,21 +125,17 @@ class AdminLoginView(APIView):
             password=password
         )
 
-        if user is None:
+        if user is None or not user.is_active or not user.is_staff:
             return Response(
                 {"error": "Invalid username or password."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        if not user.is_active or not user.is_staff:
-            return Response(
-                {"error": "You are not authorized to access the admin panel."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         login(request, user)
 
-        return Response({"message": "Login successful."})
+        return Response({
+            "message": "Login successful."
+        })
 
 
 # --------------------------------------------------
@@ -193,30 +206,27 @@ class GenerateMatchesView(APIView):
 
         created_count = 0
 
-        updated_count = 0
+        for lost in lost_reports:
+            for found in found_reports:
 
-        for result in results:
+                if lost.category.lower() != found.category.lower():
+                    continue
 
-            match, created = ItemMatch.objects.get_or_create(
+                name_score = SequenceMatcher(
+                    None,
+                    lost.item_name.lower(),
+                    found.item_name.lower()
+                ).ratio()
 
-                lost_report=result["lost_report"],
+                description_score = SequenceMatcher(
+                    None,
+                    lost.description.lower(),
+                    found.description.lower()
+                ).ratio()
 
-                found_report=result["found_report"],
-
-                defaults={
-                    "similarity_score":
-                        result["similarity_score"]
-                }
-            )
-
-            if created:
-
-                created_count += 1
-
-            elif match.status == "PENDING":
-
-                match.similarity_score = (
-                    result["similarity_score"]
+                score = (
+                    name_score * 0.7 +
+                    description_score * 0.3
                 )
 
                 match.save(
@@ -238,6 +248,10 @@ class GenerateMatchesView(APIView):
         })
 
 
+# --------------------------------------------------
+# ADMIN MATCH APPROVAL / REJECTION
+# --------------------------------------------------
+
 class MatchDecisionView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAdminUser]
@@ -245,6 +259,7 @@ class MatchDecisionView(APIView):
     def post(self, request, match_id):
         try:
             match = ItemMatch.objects.get(id=match_id)
+
         except ItemMatch.DoesNotExist:
             return Response(
                 {"error": "Match not found."},
@@ -309,6 +324,7 @@ class HandoverCreateView(APIView):
 
         handover = serializer.save()
 
+        # Update both reports after successful handover
         match.lost_report.status = "RETURNED"
         match.lost_report.save(update_fields=["status"])
 
