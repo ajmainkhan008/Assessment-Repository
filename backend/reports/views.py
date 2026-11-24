@@ -1,6 +1,6 @@
 
 import os
-from difflib import SequenceMatcher
+from .matching import find_matches
 
 from django.utils import timezone
 from django.contrib.auth import authenticate, login
@@ -27,10 +27,10 @@ from .serializers import (
 # --------------------------------------------------
 
 def expire_old_reports():
+
     Report.objects.filter(
-        expires_at__lte=timezone.now()
-    ).exclude(
-        status="EXPIRED"
+        expires_at__lte=timezone.now(),
+        status__in=["PENDING", "MATCHED"]
     ).update(status="EXPIRED")
 
 
@@ -164,17 +164,27 @@ class AdminMatchListView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        matches = ItemMatch.objects.all().order_by("-created_at")
+        matches = ItemMatch.objects.all().order_by(
+    "-similarity_score",
+    "-created_at"
+)
         serializer = ItemMatchSerializer(matches, many=True)
 
         return Response(serializer.data)
 
 
 class GenerateMatchesView(APIView):
-    authentication_classes = [SessionAuthentication]
-    permission_classes = [IsAdminUser]
+
+    authentication_classes = [
+        SessionAuthentication
+    ]
+
+    permission_classes = [
+        IsAdminUser
+    ]
 
     def post(self, request):
+
         expire_old_reports()
 
         lost_reports = Report.objects.filter(
@@ -187,6 +197,11 @@ class GenerateMatchesView(APIView):
             report_type="FOUND",
             status="PENDING",
             expires_at__gt=timezone.now()
+        )
+
+        results = find_matches(
+            lost_reports,
+            found_reports
         )
 
         created_count = 0
@@ -214,21 +229,22 @@ class GenerateMatchesView(APIView):
                     description_score * 0.3
                 )
 
-                if score >= 0.35:
-                    match, created = ItemMatch.objects.get_or_create(
-                        lost_report=lost,
-                        found_report=found,
-                        defaults={
-                            "similarity_score": round(score * 100, 2)
-                        }
-                    )
+                match.save(
+                    update_fields=["similarity_score"]
+                )
 
-                    if created:
-                        created_count += 1
+                updated_count += 1
 
         return Response({
+
             "message": "Matching process completed.",
-            "new_matches": created_count
+
+            "new_matches": created_count,
+
+            "updated_matches": updated_count,
+
+            "total_candidates": len(results)
+
         })
 
 
