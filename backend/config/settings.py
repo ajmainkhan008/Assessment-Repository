@@ -59,6 +59,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 ASGI_APPLICATION = "config.asgi.application"
 
+# PostgreSQL Database
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -70,6 +71,7 @@ DATABASES = {
     }
 }
 
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -97,14 +99,21 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# React frontend access
+# CORS configuration for React frontend
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF configuration
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 
 # Django REST Framework
 REST_FRAMEWORK = {
@@ -113,5 +122,6 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Uploaded media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"

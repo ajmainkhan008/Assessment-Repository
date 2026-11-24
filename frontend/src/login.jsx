@@ -30,23 +30,27 @@ function Login({ onBack }) {
     setError("");
 
     try {
-      // First, request a CSRF cookie from Django.
+      // Step 1: Get CSRF cookie
       const csrfResponse = await fetch(`${API_URL}/api/csrf/`, {
         method: "GET",
         credentials: "include",
       });
 
       if (!csrfResponse.ok) {
-        throw new Error("Could not connect to the login service.");
+        throw new Error(
+          `Could not get CSRF token. Server returned ${csrfResponse.status}.`
+        );
       }
 
       const csrfToken = getCookie("csrftoken");
 
       if (!csrfToken) {
-        throw new Error("CSRF token not found. Please refresh and try again.");
+        throw new Error(
+          "CSRF cookie not found. Make sure you are using localhost for both frontend and backend."
+        );
       }
 
-      // Send the admin login credentials.
+      // Step 2: Send login request
       const response = await fetch(`${API_URL}/api/login/`, {
         method: "POST",
         credentials: "include",
@@ -55,21 +59,36 @@ function Login({ onBack }) {
           "X-CSRFToken": csrfToken,
         },
         body: JSON.stringify({
-          username,
-          password,
+          username: username.trim(),
+          password: password,
         }),
       });
 
-      const result = await response.json();
+      // Safely read the server response
+      const responseText = await response.text();
 
-      if (!response.ok) {
-        throw new Error(result.error || "Login failed.");
+      let result;
+
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        throw new Error(
+          `Server returned an unexpected response (${response.status}). Check the Django terminal.`
+        );
       }
 
-      // Django has created an authenticated session.
+      if (!response.ok) {
+        throw new Error(
+          result.error || `Login failed. Status: ${response.status}`
+        );
+      }
+
+      // Step 3: Redirect after successful login
       window.location.href = `${API_URL}/admin/`;
+
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      console.error("Login error:", err);
+      setError(err.message || "Unable to connect to Django.");
     } finally {
       setLoading(false);
     }
@@ -81,6 +100,7 @@ function Login({ onBack }) {
         <div className="login-icon">L</div>
 
         <h1>Admin Login</h1>
+
         <p className="login-description">
           Sign in to manage lost and found reports.
         </p>
@@ -90,6 +110,7 @@ function Login({ onBack }) {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Username</label>
+
             <input
               type="text"
               value={username}
@@ -102,6 +123,7 @@ function Login({ onBack }) {
 
           <div className="form-group">
             <label>Password</label>
+
             <input
               type="password"
               value={password}
@@ -121,7 +143,11 @@ function Login({ onBack }) {
           </button>
         </form>
 
-        <button className="back-button" type="button" onClick={onBack}>
+        <button
+          className="back-button"
+          type="button"
+          onClick={onBack}
+        >
           Back to home
         </button>
       </section>
