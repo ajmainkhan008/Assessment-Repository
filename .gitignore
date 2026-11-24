@@ -1,0 +1,12 @@
+# Frontend (Node / Vite / React)
+frontend/node_modules/
+frontend/dist/
+frontend/.env*
+
+# Backend (Python / Django / Virtualenvs)
+backend/__pycache__/
+backend/*.py[cod]
+backend/.venv/
+backend/venv/
+backend/.env
+backend/db.sqlite3
