@@ -15,47 +15,47 @@ function App() {
 
   return (
     <div className="app">
-
       <header className="navbar">
-        <div className="brand" onClick={() => navigate("lost")}>
-          <span className="brand-icon">L</span>
-          <span>Lost & Found</span>
-        </div>
-
-        <nav>
+        <div className="navbar-inner">
           <button
-            className={page === "lost" ? "nav-active" : ""}
+            className="brand"
             onClick={() => navigate("lost")}
+            type="button"
           >
-            Lost Item
+            <span className="brand-icon">L</span>
+            <span>Lost & Found</span>
           </button>
 
-          <button
-            className={page === "found" ? "nav-active" : ""}
-            onClick={() => navigate("found")}
-          >
-            Found Item
-          </button>
+          <nav className="nav-links">
+            <button
+              className={page === "lost" ? "nav-link active" : "nav-link"}
+              onClick={() => navigate("lost")}
+            >
+              Lost Item
+            </button>
 
-          <button
-            className={page === "login" ? "nav-active admin-link" : "admin-link"}
-            onClick={() => navigate("login")}
-          >
-            Admin Login
-          </button>
-        </nav>
+            <button
+              className={page === "found" ? "nav-link active" : "nav-link"}
+              onClick={() => navigate("found")}
+            >
+              Found Item
+            </button>
+
+            <button
+              className={page === "login" ? "nav-link active" : "nav-link"}
+              onClick={() => navigate("login")}
+            >
+              Admin Login
+            </button>
+          </nav>
+        </div>
       </header>
 
       {page === "login" ? (
         <Login onBack={() => navigate("lost")} />
       ) : (
         <main className="main-content">
-
-          <section className="hero">
-            <div className="hero-tag">
-              LOST SOMETHING? FOUND SOMETHING?
-            </div>
-
+          <section className="page-heading">
             <h1>
               {page === "found"
                 ? "Report a Found Item"
@@ -64,20 +64,18 @@ function App() {
 
             <p>
               {page === "found"
-                ? "Help return someone's belongings by reporting the item you found."
-                : "Submit a report and help us reunite you with your belongings."}
+                ? "Found something? Submit the details below to help return it to its owner."
+                : "Lost something? Submit a report so we can help you find it."}
             </p>
           </section>
 
           {page === "found" ? <Found /> : <Lost />}
 
-          <p className="footer-note">
-            Your information will be used to help identify and return lost belongings.
-          </p>
-
+          <footer className="footer">
+            Lost & Found Management System
+          </footer>
         </main>
       )}
-
     </div>
   );
 }
