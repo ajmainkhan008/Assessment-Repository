@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import Lost from "./lost";
 import Found from "./found";
 import Login from "./login";
+import LostFoundPanel from "./components/LostFoundPanel";
 import "./App.css";
 
 function App() {
@@ -16,7 +16,12 @@ function App() {
   return (
     <div className="app">
       <header className="navbar">
-        <div className="navbar-inner">
+        <div className="brand" onClick={() => navigate("lost")}>
+          <span className="brand-icon">L</span>
+          <span>Lost &amp; Found</span>
+        </div>
+
+        <nav>
           <button
             className="brand"
             onClick={() => navigate("lost")}
@@ -26,36 +31,35 @@ function App() {
             <span>Lost & Found</span>
           </button>
 
-          <nav className="nav-links">
-            <button
-              className={page === "lost" ? "nav-link active" : "nav-link"}
-              onClick={() => navigate("lost")}
-            >
-              Lost Item
-            </button>
+          <button
+            className={page === "register" ? "nav-active" : ""}
+            onClick={() => navigate("register")}
+          >
+            Central Register
+          </button>
 
-            <button
-              className={page === "found" ? "nav-link active" : "nav-link"}
-              onClick={() => navigate("found")}
-            >
-              Found Item
-            </button>
-
-            <button
-              className={page === "login" ? "nav-link active" : "nav-link"}
-              onClick={() => navigate("login")}
-            >
-              Admin Login
-            </button>
-          </nav>
-        </div>
+          <button
+            className={page === "login" ? "nav-active admin-link" : "admin-link"}
+            onClick={() => navigate("login")}
+          >
+            Admin Login
+          </button>
+        </nav>
       </header>
 
       {page === "login" ? (
         <Login onBack={() => navigate("lost")} />
+      ) : page === "register" ? (
+        <main className="main-content">
+          <LostFoundPanel />
+        </main>
       ) : (
         <main className="main-content">
-          <section className="page-heading">
+          <section className="hero">
+            <div className="hero-tag">
+              LOST SOMETHING? FOUND SOMETHING?
+            </div>
+
             <h1>
               {page === "found"
                 ? "Report a Found Item"
@@ -71,9 +75,9 @@ function App() {
 
           {page === "found" ? <Found /> : <Lost />}
 
-          <footer className="footer">
-            Lost & Found Management System
-          </footer>
+          <p className="footer-note">
+            Your information will be used to help identify and return lost belongings.
+          </p>
         </main>
       )}
     </div>
