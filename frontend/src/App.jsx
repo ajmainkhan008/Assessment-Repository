@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import Lost from "./lost";
 import Found from "./found";
 import Login from "./login";
+import LostFoundPanel from "./components/LostFoundPanel";
 import "./App.css";
 
 function App() {
@@ -15,11 +15,10 @@ function App() {
 
   return (
     <div className="app">
-
       <header className="navbar">
         <div className="brand" onClick={() => navigate("lost")}>
           <span className="brand-icon">L</span>
-          <span>Lost & Found</span>
+          <span>Lost &amp; Found</span>
         </div>
 
         <nav>
@@ -38,6 +37,13 @@ function App() {
           </button>
 
           <button
+            className={page === "register" ? "nav-active" : ""}
+            onClick={() => navigate("register")}
+          >
+            Central Register
+          </button>
+
+          <button
             className={page === "login" ? "nav-active admin-link" : "admin-link"}
             onClick={() => navigate("login")}
           >
@@ -48,9 +54,12 @@ function App() {
 
       {page === "login" ? (
         <Login onBack={() => navigate("lost")} />
+      ) : page === "register" ? (
+        <main className="main-content">
+          <LostFoundPanel />
+        </main>
       ) : (
         <main className="main-content">
-
           <section className="hero">
             <div className="hero-tag">
               LOST SOMETHING? FOUND SOMETHING?
@@ -74,10 +83,8 @@ function App() {
           <p className="footer-note">
             Your information will be used to help identify and return lost belongings.
           </p>
-
         </main>
       )}
-
     </div>
   );
 }
